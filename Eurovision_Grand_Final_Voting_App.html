@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eurovision Grand Final Voting</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Montserrat & Titillium Web for eurovision vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        euroPink: '#E4007C',
+                        euroPinkDark: '#B30060',
+                        euroPurple: '#0B0E28',
+                        euroDarkBlue: '#050716',
+                        euroGold: '#FFD700',
+                        euroCyan: '#00F0FF',
+                    },
+                    fontFamily: {
+                        eurovision: ['Montserrat', 'sans-serif'],
+                        titillium: ['Titillium Web', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        neonPink: '0 0 20px rgba(228, 0, 124, 0.6), 0 0 40px rgba(228, 0, 124, 0.3)',
+                        neonGold: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)',
+                        neonCyan: '0 0 20px rgba(0, 240, 255, 0.6)',
+                        glass: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050716;
+            color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(228, 0, 124, 0.25) 0%, transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(11, 14, 40, 0.8) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Heart flag clipping */
+        .heart-badge {
+            clip-path: path('M 25 7.5 C 20 0, 0 0, 0 22.5 C 0 35, 12.5 45, 25 50 C 37.5 45, 50 35, 50 22.5 C 50 0, 30 0, 25 7.5 Z');
+        }
+
+        /* Glassmorphic card */
+        .glass-panel {
+            background: rgba(11, 14, 40, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scoreboard Row Animations */
+        .scoreboard-row {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease;
+        }
+
+        /* Pulse glow animation for 12 points reveal */
+        @keyframes douzepoints {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(255, 215, 0, 0); }
+            50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(255, 215, 0, 0.9); }
+            100% { transform: scale(1); box-shadow: 0 0 0px rgba(255, 215, 0, 0); }
+        }
+        .douze-animation {
+            animation: douzepoints 1.2s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050716;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E4007C;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFD700;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-euroPink selection:text-white">
+
+    <!-- TOP HEADER / NAV -->
+    <header class="w-full glass-panel sticky top-0 z-50 border-b border-euroPink/30 px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <!-- Eurovision Logo Title -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('scoreboard')">
+                <div class="relative w-10 h-10 flex items-center justify-center bg-euroPink rounded-full shadow-neonPink">
+                    <i class="fa-solid fa-heart text-white text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl md:text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-200 to-euroPink uppercase font-titillium">
+                        EUROVISION
+                    </h1>
+                    <p class="text-xs text-pink-300 font-semibold tracking-widest uppercase">Grand Final Televoting</p>
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <button id="nav-vote-btn" onclick="switchTab('vote')" class="px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-white/10 hover:bg-euroPink text-white border border-white/20 flex items-center gap-2">
+                    <i class="fa-solid fa-vote-yea text-euroPink group-hover:text-white"></i>
+                    <span>Cast Votes</span>
+                </button>
+                <button id="nav-scoreboard-btn" onclick="switchTab('scoreboard')" class="px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-euroPink text-white shadow-neonPink border border-euroPink/50 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-euroGold"></i>
+                    <span>Scoreboard</span>
+                </button>
+                <button onclick="toggleSound()" id="sound-btn" class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10 transition" title="Toggle Sound FX">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-pink-300"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow">
+        
+        <!-- SECTION 1: SCOREBOARD DISPLAY (DEFAULT) -->
+        <section id="scoreboard-section" class="space-y-6">
+            
+            <!-- Banner / Title Strip -->
+            <div class="glass-panel rounded-2xl p-6 text-center relative overflow-hidden border border-euroPink/40 shadow-neonPink">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-euroPink/20 rounded-full blur-3xl"></div>
+                <div class="absolute -left-10 -top-10 w-40 h-40 bg-euroCyan/20 rounded-full blur-3xl"></div>
+                
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-euroPink/20 border border-euroPink/40 text-pink-300 mb-2">
+                    Official Results Leaderboard
+                </span>
+                <h2 class="text-3xl md:text-5xl font-black uppercase font-titillium tracking-tight text-white mb-2">
+                    Grand Final <span class="text-euroPink">Scoreboard</span>
+                </h2>
+                <p class="text-slate-300 text-sm md:text-base max-w-2xl mx-auto font-light">
+                    20 Countries qualified from Semi-Final 1 and Semi-Final 2. Submit votes to update points in real-time or trigger the automated reveal sequence!
+                </p>
+
+                <!-- Action Controls for Leaderboard -->
+                <div class="mt-6 flex flex-wrap justify-center items-center gap-3">
+                    <button onclick="runAutoVoteSequence()" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-euroPink to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-neonPink transition duration-300 flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> Reveal Next Random Vote
+                    </button>
+                    <button onclick="addMockVoterBallot()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-white border border-white/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-dice"></i> Add Quick Random Ballot
+                    </button>
+                    <button onclick="resetAllVotes()" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-500/30 transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Reset Points
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-xl text-center border-l-4 border-euroPink">
+                    <p class="text-xs uppercase text-slate-400 font-bold">Total Votes Cast</p>
+                    <p id="total-ballots-count" class="text-2xl md:text-3xl font-black text-white">0</p>
+                </div>
+                <div class="glass-panel p-4 rounded-xl text-center border-l-4 border-euroGold">
+                    <p class="text-xs uppercase text-slate-400 font-bold">Current Leader</p>
+                    <p id="current-leader-name" class="text-lg md:text-2xl font-black text-euroGold truncate">--</p>
+                </div>
+                <div class="glass-panel p-4 rounded-xl text-center border-l-4 border-euroCyan">
+                    <p class="text-xs uppercase text-slate-400 font-bold">Leader Points</p>
+                    <p id="current-leader-points" class="text-2xl md:text-3xl font-black text-euroCyan">0 PTS</p>
+                </div>
+                <div class="glass-panel p-4 rounded-xl text-center border-l-4 border-purple-500">
+                    <p class="text-xs uppercase text-slate-400 font-bold">Grand Finalists</p>
+                    <p class="text-2xl md:text-3xl font-black text-white">20 Countries</p>
+                </div>
+            </div>
+
+            <!-- Main Dynamic Leaderboard Table -->
+            <div class="glass-panel rounded-2xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10 px-2">
+                    <span class="text-xs md:text-sm font-bold uppercase text-pink-300 tracking-wider">Rank & Entry</span>
+                    <span class="text-xs md:text-sm font-bold uppercase text-pink-300 tracking-wider">Total Score</span>
+                </div>
+
+                <!-- Leaderboard Rows Container -->
+                <div id="scoreboard-rows" class="space-y-2 relative min-h-[500px]">
+                    <!-- Rows populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: VOTING INTERFACE -->
+        <section id="vote-section" class="hidden space-y-6">
+            
+            <div class="glass-panel rounded-2xl p-6 border border-euroPink/40 shadow-neonPink">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-4">
+                    <div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-euroPink/20 text-pink-300 border border-euroPink/40">
+                            Televote Ballot
+                        </span>
+                        <h2 class="text-2xl md:text-4xl font-black uppercase font-titillium text-white mt-1">
+                            Cast Your Eurovision Points
+                        </h2>
+                        <p class="text-xs md:text-sm text-slate-300">
+                            Select voter nation, then assign points (1-8, 10, 12) to your top 10 favorite finalist countries.
+                        </p>
+                    </div>
+
+                    <!-- Voter Country Selection -->
+                    <div class="w-full md:w-auto flex flex-col gap-1">
+                        <label class="text-xs font-bold uppercase text-pink-300">Voting On Behalf Of:</label>
+                        <select id="voter-country-select" class="bg-euroPurple border border-euroPink/50 rounded-xl px-4 py-2 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-euroPink shadow-lg">
+                            <option value="Rest of the World 🌍">🌍 Rest of the World (Global Televote)</option>
+                            <!-- Finalists & Other voting nations added via JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Points Distribution Board -->
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left Column: Available Points Slots -->
+                    <div class="lg:col-span-5 space-y-3">
+                        <h3 class="text-sm font-bold uppercase text-slate-300 tracking-wider mb-2 flex justify-between items-center">
+                            <span>Points Assignment</span>
+                            <span id="assigned-count" class="text-xs text-euroPink font-mono font-normal">0/10 Assigned</span>
+                        </h3>
+
+                        <div id="points-slots-container" class="space-y-2">
+                            <!-- Dynamically generated points slots: 12, 10, 8, 7, 6, 5, 4, 3, 2, 1 -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Finalist Selection Pool -->
+                    <div class="lg:col-span-7 flex flex-col">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-bold uppercase text-slate-300 tracking-wider">
+                                Grand Finalists (20)
+                            </h3>
+                            <button onclick="clearCurrentBallot()" class="text-xs text-slate-400 hover:text-white underline">
+                                Clear Ballot
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Click a points value on the left, then click a country below to assign points.</p>
+
+                        <!-- Countries Grid -->
+                        <div id="country-selection-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[520px] overflow-y-auto pr-1">
+                            <!-- Populated dynamically with 20 qualified countries -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="mt-8 pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div id="voting-status-msg" class="text-sm font-semibold text-pink-300 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-euroCyan"></i> Assign all points to submit your ballot.
+                    </div>
+                    <button id="submit-ballot-btn" onclick="submitUserBallot()" disabled class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-black uppercase text-sm tracking-widest bg-slate-700 text-slate-400 cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Official Televote
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full glass-panel border-t border-white/10 py-4 px-4 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>Eurovision Song Contest Televoting Simulator &copy; 2026. Celebrating Music & Unity.</p>
+            <p class="text-pink-400 font-semibold">UNITED BY MUSIC</p>
+        </div>
+    </footer>
+
+    <!-- MODAL / REVEAL OVERLAY FOR ANIMATED TELEVOTE PRESENTATION -->
+    <div id="reveal-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel border-2 border-euroPink rounded-3xl p-6 md:p-8 max-w-lg w-full text-center relative shadow-neonPink transform transition-all duration-500 scale-90 opacity-0" id="reveal-modal-card">
+            
+            <div id="modal-content-normal">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-euroPink/20 border-2 border-euroPink flex items-center justify-center animate-bounce">
+                    <i class="fa-solid fa-paper-plane text-3xl text-euroPink"></i>
+                </div>
+                <h3 class="text-2xl md:text-3xl font-black text-white uppercase font-titillium mb-2">
+                    Votes Recorded!
+                </h3>
+                <p id="modal-voter-name" class="text-euroPink font-bold text-lg mb-4">From Rest of the World</p>
+                
+                <div id="modal-douze-spotlight" class="my-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-euroGold/30 to-amber-500/20 border border-euroGold/60 hidden">
+                    <p class="text-xs uppercase font-bold text-euroGold tracking-widest">12 POINTS GO TO</p>
+                    <p id="modal-douze-country" class="text-2xl font-black text-white mt-1">SWITZERLAND</p>
+                </div>
+
+                <button onclick="closeModal()" class="w-full mt-4 py-3 bg-euroPink hover:bg-pink-600 text-white font-bold rounded-xl shadow-neonPink transition">
+                    View Updated Scoreboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* ==========================================================================
+           DATA DEFINITIONS & INITIALIZATION
+           ========================================================================== */
+
+        // Qualified Grand Finalists from Semi-Final 1 and Semi-Final 2 (Images provided)
+        const QUALIFIED_COUNTRIES = [
+            // Semi Final 1 Qualifiers
+            { id: 'denmark', name: 'Denmark', sf: 1, flagSvg: getFlagSvg('DK'), points: 0 },
+            { id: 'moldova', name: 'Moldova', sf: 1, flagSvg: getFlagSvg('MD'), points: 0 },
+            { id: 'usa', name: 'USA', sf: 1, flagSvg: getFlagSvg('US'), points: 0 },
+            { id: 'romania', name: 'Romania', sf: 1, flagSvg: getFlagSvg('RO'), points: 0 },
+            { id: 'slovakia', name: 'Slovakia', sf: 1, flagSvg: getFlagSvg('SK'), points: 0 },
+            { id: 'armenia', name: 'Armenia', sf: 1, flagSvg: getFlagSvg('AM'), points: 0 },
+            { id: 'serbia', name: 'Serbia', sf: 1, flagSvg: getFlagSvg('RS'), points: 0 },
+            { id: 'germany', name: 'Germany', sf: 1, flagSvg: getFlagSvg('DE'), points: 0 },
+            { id: 'iceland', name: 'Iceland', sf: 1, flagSvg: getFlagSvg('IS'), points: 0 },
+            { id: 'france', name: 'France', sf: 1, flagSvg: getFlagSvg('FR'), points: 0 },
+
+            // Semi Final 2 Qualifiers
+            { id: 'finland', name: 'Finland', sf: 2, flagSvg: getFlagSvg('FI'), points: 0 },
+            { id: 'bulgaria', name: 'Bulgaria', sf: 2, flagSvg: getFlagSvg('BG'), points: 0 },
+            { id: 'canada', name: 'Canada', sf: 2, flagSvg: getFlagSvg('CA'), points: 0 },
+            { id: 'norway', name: 'Norway', sf: 2, flagSvg: getFlagSvg('NO'), points: 0 },
+            { id: 'ireland', name: 'Ireland', sf: 2, flagSvg: getFlagSvg('IE'), points: 0 },
+            { id: 'ukraine', name: 'Ukraine', sf: 2, flagSvg: getFlagSvg('UA'), points: 0 },
+            { id: 'sweden', name: 'Sweden', sf: 2, flagSvg: getFlagSvg('SE'), points: 0 },
+            { id: 'lithuania', name: 'Lithuania', sf: 2, flagSvg: getFlagSvg('LT'), points: 0 },
+            { id: 'switzerland', name: 'Switzerland', sf: 2, flagSvg: getFlagSvg('CH'), points: 0 },
+            { id: 'newzealand', name: 'New Zealand', sf: 2, flagSvg: getFlagSvg('NZ'), points: 0 }
+        ];
+
+        // Eurovision Official Point Values
+        const POINT_VALUES = [12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
+
+        // State variables
+        let scoreState = {}; // { countryId: totalPoints }
+        let ballotHistory = []; // list of submitted votes
+        let currentSelectedPoint = null; // currently active point slot to assign
+        let currentBallot = {}; // { pointValue: countryId }
+        let isSoundEnabled = true;
+
+        /* ==========================================================================
+           AUDIO SYNTHESIZER (Web Audio API for zero external sound dependencies)
+           ========================================================================== */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'select') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'assign') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'douze') {
+                    // Dramatic fanfare for 12 points
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C6
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+                        noteGain.gain.setValueAtTime(0.2, now + (idx * 0.1));
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.1) + 0.4);
+                        
+                        noteOsc.start(now + (idx * 0.1));
+                        noteOsc.stop(now + (idx * 0.1) + 0.4);
+                    });
+                } else if (type === 'submit') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.35);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                }
+            } catch (e) {
+                console.log('Audio playback prevented or unsupported');
+            }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (isSoundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-pink-300';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+            }
+        }
+
+        /* ==========================================================================
+           FLAG SVG GENERATOR (High quality inline heart flag SVGs)
+           ========================================================================== */
+        function getFlagSvg(code) {
+            // Mapping of country code to SVG colors/patterns inside Eurovision heart shape
+            const flags = {
+                'DK': `<rect width="50" height="50" fill="#C8102E"/><rect x="15" width="8" height="50" fill="#FFF"/><rect y="21" width="50" height="8" fill="#FFF"/>`,
+                'MD': `<rect width="17" height="50" fill="#0033A0"/><rect x="17" width="16" height="50" fill="#FFD100"/><rect x="33" width="17" height="50" fill="#CC092F"/>`,
+                'US': `<rect width="50" height="50" fill="#B22234"/><g fill="#FFF"><rect y="7" width="50" height="7"/><rect y="21" width="50" height="7"/><rect y="35" width="50" height="7"/></g><rect width="24" height="26" fill="#3C3B6E"/>`,
+                'RO': `<rect width="17" height="50" fill="#002B7F"/><rect x="17" width="16" height="50" fill="#FCD116"/><rect x="33" width="17" height="50" fill="#CE1126"/>`,
+                'SK': `<rect width="50" height="17" fill="#FFF"/><rect y="17" width="50" height="16" fill="#0B4EA2"/><rect y="33" width="50" height="17" fill="#EE1C25"/>`,
+                'AM': `<rect width="50" height="17" fill="#D90012"/><rect y="17" width="50" height="16" fill="#0033A0"/><rect y="33" width="50" height="17" fill="#F2A800"/>`,
+                'RS': `<rect width="50" height="17" fill="#C6363C"/><rect y="17" width="50" height="16" fill="#0C4076"/><rect y="33" width="50" height="17" fill="#FFF"/>`,
+                'DE': `<rect width="50" height="17" fill="#000"/><rect y="17" width="50" height="16" fill="#DD0000"/><rect y="33" width="50" height="17" fill="#FFCC00"/>`,
+                'IS': `<rect width="50" height="50" fill="#003897"/><rect x="14" width="10" height="50" fill="#FFF"/><rect y="20" width="50" height="10" fill="#FFF"/><rect x="16" width="6" height="50" fill="#D72828"/><rect y="22" width="50" height="6" fill="#D72828"/>`,
+                'FR': `<rect width="17" height="50" fill="#002395"/><rect x="17" width="16" height="50" fill="#FFF"/><rect x="33" width="17" height="50" fill="#ED2939"/>`,
+                'FI': `<rect width="50" height="50" fill="#FFF"/><rect x="14" width="10" height="50" fill="#003580"/><rect y="20" width="50" height="10" fill="#003580"/>`,
+                'BG': `<rect width="50" height="17" fill="#FFF"/><rect y="17" width="50" height="16" fill="#00966E"/><rect y="33" width="50" height="17" fill="#D62612"/>`,
+                'CA': `<rect width="13" height="50" fill="#FF0000"/><rect x="13" width="24" height="50" fill="#FFF"/><rect x="37" width="13" height="50" fill="#FF0000"/><polygon points="25,12 28,22 34,20 30,27 35,32 27,31 25,40 23,31 15,32 20,27 16,20 22,22" fill="#FF0000"/>`,
+                'NO': `<rect width="50" height="50" fill="#BA0C2F"/><rect x="14" width="10" height="50" fill="#FFF"/><rect y="20" width="50" height="10" fill="#FFF"/><rect x="16" width="6" height="50" fill="#00205B"/><rect y="22" width="50" height="6" fill="#00205B"/>`,
+                'IE': `<rect width="17" height="50" fill="#169B62"/><rect x="17" width="16" height="50" fill="#FFF"/><rect x="33" width="17" height="50" fill="#FF883E"/>`,
+                'UA': `<rect width="50" height="25" fill="#0057B7"/><rect y="25" width="50" height="25" fill="#FFD700"/>`,
+                'SE': `<rect width="50" height="50" fill="#006AA7"/><rect x="15" width="8" height="50" fill="#FECC00"/><rect y="21" width="50" height="8" fill="#FECC00"/>`,
+                'LT': `<rect width="50" height="17" fill="#FDB913"/><rect y="17" width="50" height="16" fill="#006A44"/><rect y="33" width="50" height="17" fill="#C1272D"/>`,
+                'CH': `<rect width="50" height="50" fill="#D52B1E"/><rect x="20" y="10" width="10" height="30" fill="#FFF"/><rect x="10" y="20" width="30" height="10" fill="#FFF"/>`,
+                'NZ': `<rect width="50" height="50" fill="#00247D"/><rect width="25" height="25" fill="#00247D"/><path d="M0,0 L25,25 M25,0 L0,25" stroke="#FFF" stroke-width="4"/><path d="M0,0 L25,25 M25,0 L0,25" stroke="#CC142B" stroke-width="2"/><rect x="10" y="0" width="5" height="25" fill="#FFF"/><rect x="0" y="10" width="25" height="5" fill="#FFF"/><rect x="11.5" y="0" width="2" height="25" fill="#CC142B"/><rect x="0" y="11.5" width="25" height="2" fill="#CC142B"/>`
+            };
+            return `<svg viewBox="0 0 50 50" class="w-full h-full object-cover">${flags[code] || '<rect width="50" height="50" fill="#E4007C"/>'}</svg>`;
+        }
+
+        /* ==========================================================================
+           APP SETUP & EVENT HANDLERS
+           ========================================================================== */
+
+        window.onload = function() {
+            // Initialize Score State
+            QUALIFIED_COUNTRIES.forEach(c => scoreState[c.id] = 0);
+
+            // Populate voting options and elements
+            setupVoterSelect();
+            renderPointsSlots();
+            renderCountrySelectionGrid();
+            renderScoreboard();
+
+            // Select 12 points slot by default
+            selectPointsSlot(12);
+        };
+
+        function switchTab(tabName) {
+            playSound('select');
+            const scoreSec = document.getElementById('scoreboard-section');
+            const voteSec = document.getElementById('vote-section');
+            const scoreBtn = document.getElementById('nav-scoreboard-btn');
+            const voteBtn = document.getElementById('nav-vote-btn');
+
+            if (tabName === 'scoreboard') {
+                scoreSec.classList.remove('hidden');
+                voteSec.classList.add('hidden');
+                scoreBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-euroPink text-white shadow-neonPink border border-euroPink/50 flex items-center gap-2';
+                voteBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-white/10 hover:bg-euroPink text-white border border-white/20 flex items-center gap-2';
+                renderScoreboard();
+            } else {
+                scoreSec.classList.add('hidden');
+                voteSec.classList.remove('hidden');
+                voteBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-euroPink text-white shadow-neonPink border border-euroPink/50 flex items-center gap-2';
+                scoreBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 bg-white/10 hover:bg-euroPink text-white border border-white/20 flex items-center gap-2';
+            }
+        }
+
+        function setupVoterSelect() {
+            const select = document.getElementById('voter-country-select');
+            // Add qualified countries as voters too
+            QUALIFIED_COUNTRIES.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = `🗳️ ${c.name} Televote`;
+                select.appendChild(opt);
+            });
+            // Add non-qualifiers as voting-only guest juries
+            const guestVoters = ['Hungary', 'Turkey', 'South Korea', 'Philippines', 'Azerbaijan', 'Georgia', 'Portugal', 'Montenegro', 'Brazil'];
+            guestVoters.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = `🌐 ${g} (Jury/Televote)`;
+                select.appendChild(opt);
+            });
+        }
+
+        /* ==========================================================================
+           VOTING BALLOT INTERACTION
+           ========================================================================== */
+
+        function renderPointsSlots() {
+            const container = document.getElementById('points-slots-container');
+            container.innerHTML = '';
+
+            POINT_VALUES.forEach(pts => {
+                const assignedCountryId = currentBallot[pts];
+                const assignedCountry = QUALIFIED_COUNTRIES.find(c => c.id === assignedCountryId);
+                const isSelected = currentSelectedPoint === pts;
+                const is12 = pts === 12;
+
+                const slot = document.createElement('div');
+                slot.onclick = () => selectPointsSlot(pts);
+                slot.className = `p-3 rounded-xl cursor-pointer border transition-all duration-300 flex items-center justify-between ${
+                    isSelected 
+                        ? 'border-euroCyan bg-euroCyan/20 shadow-neonCyan scale-[1.02]' 
+                        : assignedCountry 
+                            ? 'border-euroPink/60 bg-euroPink/10' 
+                            : 'border-white/10 bg-white/5 hover:border-white/30'
+                }`;
+
+                slot.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg ${
+                            is12 
+                                ? 'bg-gradient-to-br from-yellow-400 to-amber-600 text-slate-950 shadow-neonGold' 
+                                : 'bg-euroPink text-white'
+                        }">
+                            ${pts}
+                        </span>
+                        <div>
+                            <p class="text-xs font-bold uppercase text-slate-400">${pts === 12 ? 'Douze Points (12 Pts)' : pts + ' Points'}</p>
+                            <p class="text-sm font-extrabold ${assignedCountry ? 'text-white' : 'text-slate-500 italic'}">
+                                ${assignedCountry ? assignedCountry.name : 'Unassigned - Click to set'}
+                            </p>
+                        </div>
+                    </div>
+                    ${assignedCountry ? `
+                        <button onclick="event.stopPropagation(); removeAssignedPoint(${pts})" class="text-slate-400 hover:text-red-400 p-2">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    ` : `
+                        <i class="fa-solid fa-chevron-right text-xs ${isSelected ? 'text-euroCyan' : 'text-slate-600'}"></i>
+                    `}
+                `;
+                container.appendChild(slot);
+            });
+
+            updateVotingStatus();
+        }
+
+        function renderCountrySelectionGrid() {
+            const grid = document.getElementById('country-selection-grid');
+            grid.innerHTML = '';
+
+            QUALIFIED_COUNTRIES.forEach(c => {
+                // Find if this country is already assigned a point value in the ballot
+                const assignedPoint = Object.keys(currentBallot).find(pts => currentBallot[pts] === c.id);
+                
+                const btn = document.createElement('div');
+                btn.onclick = () => assignCountryToSelectedPoint(c.id);
+                btn.className = `p-2.5 rounded-xl border cursor-pointer transition-all duration-300 flex items-center gap-3 ${
+                    assignedPoint 
+                        ? 'border-euroPink bg-euroPink/20 opacity-80' 
+                        : 'border-white/10 bg-white/5 hover:border-euroPink/60 hover:bg-euroPink/10'
+                }`;
+
+                btn.innerHTML = `
+                    <div class="w-8 h-8 rounded-full overflow-hidden heart-badge shadow-md flex-shrink-0">
+                        ${c.flagSvg}
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-xs font-bold text-white truncate">${c.name}</p>
+                        <p class="text-[10px] text-slate-400 uppercase">SF ${c.sf} Qualifier</p>
+                    </div>
+                    ${assignedPoint ? `
+                        <span class="px-2 py-0.5 rounded text-xs font-black bg-euroPink text-white shadow-sm">
+                            ${assignedPoint} pt
+                        </span>
+                    ` : ''}
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectPointsSlot(pts) {
+            playSound('select');
+            currentSelectedPoint = pts;
+            renderPointsSlots();
+        }
+
+        function assignCountryToSelectedPoint(countryId) {
+            if (!currentSelectedPoint) {
+                // Default to 12 if none selected or next unassigned
+                currentSelectedPoint = POINT_VALUES.find(p => !currentBallot[p]) || 12;
+            }
+
+            // Remove country if it was previously assigned to another point slot
+            Object.keys(currentBallot).forEach(pts => {
+                if (currentBallot[pts] === countryId) {
+                    delete currentBallot[pts];
+                }
+            });
+
+            // Assign to active slot
+            currentBallot[currentSelectedPoint] = countryId;
+            playSound(currentSelectedPoint == 12 ? 'douze' : 'assign');
+
+            // Move to next unassigned point slot automatically
+            const nextEmpty = POINT_VALUES.find(p => !currentBallot[p]);
+            currentSelectedPoint = nextEmpty || null;
+
+            renderPointsSlots();
+            renderCountrySelectionGrid();
+        }
+
+        function removeAssignedPoint(pts) {
+            playSound('select');
+            delete currentBallot[pts];
+            currentSelectedPoint = pts;
+            renderPointsSlots();
+            renderCountrySelectionGrid();
+        }
+
+        function clearCurrentBallot() {
+            playSound('select');
+            currentBallot = {};
+            currentSelectedPoint = 12;
+            renderPointsSlots();
+            renderCountrySelectionGrid();
+        }
+
+        function updateVotingStatus() {
+            const assignedCount = Object.keys(currentBallot).length;
+            const countEl = document.getElementById('assigned-count');
+            const btn = document.getElementById('submit-ballot-btn');
+            const msg = document.getElementById('voting-status-msg');
+
+            countEl.textContent = `${assignedCount}/10 Assigned`;
+
+            if (assignedCount === 10) {
+                btn.disabled = false;
+                btn.className = 'w-full sm:w-auto px-8 py-3.5 rounded-xl font-black uppercase text-sm tracking-widest bg-gradient-to-r from-euroPink to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-neonPink cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105';
+                msg.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> All 10 scores set! Ready to submit televote.`;
+            } else {
+                btn.disabled = true;
+                btn.className = 'w-full sm:w-auto px-8 py-3.5 rounded-xl font-black uppercase text-sm tracking-widest bg-slate-800 text-slate-500 cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2';
+                msg.innerHTML = `<i class="fa-solid fa-circle-info text-euroCyan"></i> Assign points to ${10 - assignedCount} more country(s).`;
+            }
+        }
+
+        function submitUserBallot() {
+            if (Object.keys(currentBallot).length < 10) return;
+
+            const voterName = document.getElementById('voter-country-select').value;
+            
+            // Apply points to global score
+            Object.keys(currentBallot).forEach(pts => {
+                const cId = currentBallot[pts];
+                scoreState[cId] = (scoreState[cId] || 0) + parseInt(pts);
+            });
+
+            ballotHistory.push({
+                voter: voterName,
+                ballot: { ...currentBallot },
+                timestamp: new Date()
+            });
+
+            playSound('submit');
+            
+            // Open celebration reveal modal
+            showRevealModal(voterName, currentBallot[12]);
+
+            // Clear active ballot for next voter
+            currentBallot = {};
+            currentSelectedPoint = 12;
+            renderPointsSlots();
+            renderCountrySelectionGrid();
+        }
+
+        function showRevealModal(voterName, douzeCountryId) {
+            const modal = document.getElementById('reveal-modal');
+            const modalCard = document.getElementById('reveal-modal-card');
+            const voterText = document.getElementById('modal-voter-name');
+            const douzeSpot = document.getElementById('modal-douze-spotlight');
+            const douzeCountryText = document.getElementById('modal-douze-country');
+
+            voterText.textContent = `Votes from: ${voterName}`;
+
+            if (douzeCountryId) {
+                const douzeC = QUALIFIED_COUNTRIES.find(c => c.id === douzeCountryId);
+                douzeCountryText.textContent = `${douzeC.name.toUpperCase()} 💖`;
+                douzeSpot.classList.remove('hidden');
+            } else {
+                douzeSpot.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalCard.classList.remove('scale-90', 'opacity-0');
+                modalCard.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('reveal-modal');
+            const modalCard = document.getElementById('reveal-modal-card');
+            
+            modalCard.classList.remove('scale-100', 'opacity-100');
+            modalCard.classList.add('scale-90', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                switchTab('scoreboard');
+            }, 300);
+        }
+
+        /* ==========================================================================
+           SCOREBOARD DISPLAY & ANIMATED REVEAL
+           ========================================================================== */
+
+        function getSortedLeaderboard() {
+            return QUALIFIED_COUNTRIES.map(c => ({
+                ...c,
+                totalPoints: scoreState[c.id] || 0
+            })).sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name));
+        }
+
+        function renderScoreboard() {
+            const container = document.getElementById('scoreboard-rows');
+            const sorted = getSortedLeaderboard();
+
+            // Update Header Stats
+            document.getElementById('total-ballots-count').textContent = ballotHistory.length;
+            document.getElementById('current-leader-name').textContent = sorted[0].totalPoints > 0 ? sorted[0].name : 'Waiting for Votes';
+            document.getElementById('current-leader-points').textContent = `${sorted[0].totalPoints} PTS`;
+
+            container.innerHTML = '';
+
+            sorted.forEach((country, index) => {
+                const rank = index + 1;
+                const isLeader = rank === 1 && country.totalPoints > 0;
+                const isTop3 = rank <= 3 && country.totalPoints > 0;
+
+                const row = document.createElement('div');
+                row.className = `scoreboard-row p-3 rounded-xl border flex items-center justify-between transition-all duration-500 ${
+                    isLeader 
+                        ? 'bg-gradient-to-r from-amber-500/20 via-euroPurple to-euroPink/20 border-euroGold shadow-neonGold font-extrabold scale-[1.01]' 
+                        : isTop3 
+                            ? 'bg-white/10 border-pink-400/40' 
+                            : 'bg-white/5 border-white/10 hover:border-white/20'
+                }`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <!-- Rank Badge -->
+                        <span class="w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-black text-sm md:text-base ${
+                            isLeader 
+                                ? 'bg-euroGold text-slate-950 shadow-neonGold' 
+                                : isTop3 
+                                    ? 'bg-euroPink text-white' 
+                                    : 'bg-white/10 text-slate-300'
+                        }">
+                            ${rank}
+                        </span>
+
+                        <!-- Flag Badge -->
+                        <div class="w-9 h-9 md:w-11 md:h-11 rounded-full overflow-hidden heart-badge shadow-lg flex-shrink-0">
+                            ${country.flagSvg}
+                        </div>
+
+                        <!-- Country Info -->
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base md:text-lg font-extrabold text-white tracking-wide">${country.name}</h3>
+                                ${isLeader ? '<i class="fa-solid fa-crown text-euroGold text-xs animate-bounce"></i>' : ''}
+                            </div>
+                            <span class="text-[10px] md:text-xs text-slate-400 uppercase font-semibold">Semi-Final ${country.sf}</span>
+                        </div>
+                    </div>
+
+                    <!-- Points Pill -->
+                    <div class="flex items-center gap-2">
+                        <div class="px-4 py-1.5 rounded-xl font-black text-base md:text-xl ${
+                            isLeader 
+                                ? 'bg-euroGold text-slate-950 shadow-neonGold' 
+                                : 'bg-euroPink/20 text-euroPink border border-euroPink/40'
+                        }">
+                            ${country.totalPoints} <span class="text-xs font-bold">PTS</span>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
+        }
+
+        /* ==========================================================================
+           AUTOMATED RANDOM REVEAL / MOCK VOTING GENERATOR
+           ========================================================================== */
+
+        function generateRandomBallot() {
+            // Shuffle qualified countries to assign random point values
+            const shuffled = [...QUALIFIED_COUNTRIES].sort(() => 0.5 - Math.random());
+            const randomBallot = {};
+            POINT_VALUES.forEach((pts, idx) => {
+                randomBallot[pts] = shuffled[idx].id;
+            });
+            return randomBallot;
+        }
+
+        function addMockVoterBallot() {
+            const guestVoters = ['Finland Juries', 'United Kingdom', 'Sweden Televote', 'Spain', 'Italy Juries', 'Rest of the World', 'Australia', 'Germany Juries'];
+            const randomVoter = guestVoters[Math.floor(Math.random() * guestVoters.length)];
+            const ballot = generateRandomBallot();
+
+            // Apply points
+            Object.keys(ballot).forEach(pts => {
+                const cId = ballot[pts];
+                scoreState[cId] = (scoreState[cId] || 0) + parseInt(pts);
+            });
+
+            ballotHistory.push({
+                voter: randomVoter,
+                ballot: ballot,
+                timestamp: new Date()
+            });
+
+            playSound('douze');
+            renderScoreboard();
+        }
+
+        function runAutoVoteSequence() {
+            addMockVoterBallot();
+            // Scroll smoothly to top of scoreboard
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetAllVotes() {
+            if (confirm('Reset all scores to 0?')) {
+                playSound('select');
+                QUALIFIED_COUNTRIES.forEach(c => scoreState[c.id] = 0);
+                ballotHistory = [];
+                currentBallot = {};
+                renderScoreboard();
+                renderPointsSlots();
+                renderCountrySelectionGrid();
+            }
+        }
+    </script>
+</body>
+</html>
